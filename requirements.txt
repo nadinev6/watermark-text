@@ -30,6 +30,9 @@ structlog==23.2.0
 # Environment and configuration
 python-dotenv==1.0.0
 
+# Text watermarking and steganography
+stegano==0.10.2
+
 # Optional: For enhanced model support
 accelerate==0.25.0
 safetensors==0.4.1
