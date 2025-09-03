@@ -5,7 +5,6 @@ This module provides FastAPI endpoints for watermark embedding, extraction,
 and validation operations using steganographic and visible watermarking methods.
 """
 
-
 import time
 import logging
 from typing import List, Optional, Any
