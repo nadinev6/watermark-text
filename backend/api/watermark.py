@@ -10,6 +10,10 @@ import logging
 from typing import List, Optional, Any
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
 from fastapi.responses import JSONResponse
+from stegano import text as stegano_text
+import tempfile
+import os
+
 
 from models.schemas import (
     WatermarkEmbedRequest,
@@ -439,3 +443,67 @@ async def _log_watermark_operation(
         
     except Exception as e:
         logger.error(f"Failed to log watermark operation: {e}")
+
+  
+@app.post("/api/watermark/embed")
+async def embed_watermark(
+    text: str = Form(...),
+    watermark: str = Form(...),
+    visibility: str = Form(default="hidden")
+):
+    """
+    Embed a watermark after checking for existing ones.
+    Rejects overwriting to prevent plagiarism.
+    """
+    try:
+        # Check if text already has a watermark
+        existing_watermark = extract_existing_watermark(text)
+        if existing_watermark != "No watermark found":
+            raise HTTPException(
+                status_code=409,
+                detail=f"Overwrite denied: Text already contains a watermark ('{existing_watermark}')."
+            )
+        
+        # Proceed with embedding (same as before)
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp_in:
+            tmp_in.write(text)
+            tmp_in.flush()
+            
+            secret_text = stegano_text.hide(tmp_in.name, watermark)
+            with tempfile.NamedTemporaryFile(mode='r', delete=False) as tmp_out:
+                secret_text.save(tmp_out.name)
+                watermarked_text = tmp_out.read().decode('utf-8')
+                
+        # Handle visible watermark option
+        if visibility == "visible":
+            watermarked_text += f"\n\n[Watermark: {watermark}]"
+            
+        return {
+            "original_text": text,
+            "watermarked_text": watermarked_text,
+            "watermark": watermark,
+            "visibility": visibility,
+            "method": "stegano_lsb",
+            "status": "success"
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+def extract_existing_watermark(input_text: str) -> str:
+    """
+    Helper function to detect watermarks in text.
+    Returns the watermark if found, otherwise "No watermark found".
+    """
+    try:
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp_file:
+            tmp_file.write(input_text)
+            tmp_file.flush()
+            
+            watermark = stegano_text.reveal(tmp_file.name)
+            
+        os.unlink(tmp_file.name)  # Clean up temp file
+        return watermark or "No watermark found"
+        
+    except Exception:
+        return "No watermark found"  # Fail silently for production
