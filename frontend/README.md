@@ -1,48 +1,44 @@
-# AI Watermark Detector Frontend
+📚 Core E-Book Formats & Requirements
+Format
+Platforms
+Key Requirements
+EPUB
+All (Kindle, Apple, Kobo, Google)
+- Validated XML structure<br>- Semantic HTML/CSS<br>- Accessible metadata (title/author)<br>- Responsive design (reflows on devices)
+MOBI/AZW3
+Amazon Kindle
+- Converted via KindleGen<br>- Limited styling (no advanced CSS)<br>- Mandatory cover image (600×800 px min)
+PDF
+Print-on-demand, some retailers
+- Fixed layout (300 DPI for print)<br>- Consistent margins/fonts<br>- Embedded fonts<br>- High-res cover (≥2000×3000 px)
+🎯 Critical Requirements for Self-Publishers
+Metadata:
+ISBN (optional but recommended)
+Author name, title, subtitle
+Category, keywords, blurb
+Publication date
+Cover Design:
+Dimensions: 1200×1800 px (minimum) for digital; 300 DPI for print
+File Type: JPG/PNG (no transparency)
+Simplicity: Avoid cluttered designs
+Interior Formatting:
+Fonts: Use standard serif/sans-serif (e.g., Times New Roman, Arial)
+Margins: 0.5–1 inch (prevents cropping)
+Chapter Headings: Consistent hierarchy (H1/H2 tags in EPUB)
+Images: Optimized for screen (72–150 DPI)
+💧 Watermarking in E-Books
+Your watermarking feature integrates seamlessly with these formats:
 
-A modern React TypeScript frontend for the AI Watermark Detector application.
-
-## Features
-
-- **Document-style Text Editor**: Clean, familiar white document interface with paper-like styling
-- **Mesh Gradient Background**: Beautiful animated gradient background using CSS animations
-- **Dual Panel Layout**: 
-  - Left panel: Light-themed history sidebar
-  - Right panel: Dark-themed results panel
-- **Modern UI Elements**: Drop shadows, blur effects, and smooth animations
-- **Responsive Design**: Adapts to different screen sizes
-- **Real-time Analysis**: Live text analysis with confidence scoring
-
-## Design Elements
-
-- **Background**: Animated mesh gradient with floating orbs
-- **Text Editor**: Document-style with red margin line, serif font
-- **Panels**: Contrasting light/dark theme with glassmorphism effects
-- **Shadows**: Layered drop shadows for depth perception
-- **Colors**: Teal accent colors (#4ecdc4) with gradient highlights
-
-## Getting Started
-
-```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm start
-
-# Build for production
-npm run build
-```
-
-## Components
-
-- `App.tsx` - Main application component
-- `MeshGradientBackground.tsx` - Animated gradient background
-- `Header.tsx` - Top navigation with search and analyze button
-- `TextEditor.tsx` - Document-style text editor
-- `HistoryPanel.tsx` - Left sidebar with analysis history
-- `ResultsPanel.tsx` - Right sidebar with detection results
-
-## API Integration
-
-The frontend connects to the FastAPI backend at `http://localhost:8000` and uses the `/api/detect` endpoint for text analysis.
+EPUB/MOBI: Apply watermarks to the source text (HTML/CSS) before conversion. Use subtle positioning (e.g., footer with low opacity).
+PDF: Ideal for watermarks—embed them as backgrounds or overlays (your Stegano integration shines here).
+Best Practice:
+Visible Watermarks: Add faint text/logos (e.g., "© [Author Name]").
+Invisible Watermarks: Use Stegano to embed metadata (e.g., author ID) without affecting readability.
+🚀 Workflow for Your Application
+User Creates Text → Adds watermark via your tool.
+Export Options:
+EPUB: For broad retailer compatibility.
+PDF: For print-on-demand or fixed-layout needs.
+Automate Compliance:
+Validate metadata/cover specs pre-export.
+Offer templates matching platform guidelines (e.g., KDP’s cover template).
