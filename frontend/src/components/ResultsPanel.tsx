@@ -6,16 +6,29 @@ import {
   BarChart3, 
   Brain,
   Zap,
-  Eye
+  Eye,
+  Shield,
+  ShieldCheck,
+  ShieldX,
+  Info,
+  Clock,
+  Hash,
+  FileText
 } from 'lucide-react';
 import './ResultsPanel.css';
 
 interface ResultsPanelProps {
   results: any;
   isAnalyzing: boolean;
+  watermarkInfo?: {
+    hasWatermark: boolean;
+    extractedContent?: string;
+    confidence?: number;
+    method?: string;
+  };
 }
 
-export const ResultsPanel: React.FC<ResultsPanelProps> = ({ results, isAnalyzing }) => {
+export const ResultsPanel: React.FC<ResultsPanelProps> = ({ results, isAnalyzing, watermarkInfo }) => {
   const getOverallStatus = () => {
     if (!results) return null;
     
@@ -88,6 +101,66 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({ results, isAnalyzing
     );
   };
 
+  const renderWatermarkSection = () => {
+    if (!watermarkInfo) return null;
+
+    const { hasWatermark, extractedContent, confidence, method } = watermarkInfo;
+
+    return (
+      <div className="watermark-section">
+        <h4 className="section-title">Watermark Information</h4>
+        
+        <div className="watermark-status-card">
+          <div className="watermark-header">
+            <div className="watermark-icon-container">
+              {hasWatermark ? (
+                <ShieldCheck className="watermark-icon watermark-found" />
+              ) : (
+                <ShieldX className="watermark-icon watermark-not-found" />
+              )}
+            </div>
+            <div className="watermark-info">
+              <h3 className="watermark-status-text">
+                {hasWatermark ? 'Watermark Detected' : 'No Watermark Found'}
+              </h3>
+              {confidence !== undefined && (
+                <p className="watermark-confidence">
+                  Confidence: {Math.round(confidence * 100)}%
+                </p>
+              )}
+            </div>
+          </div>
+
+          {hasWatermark && extractedContent && (
+            <div className="watermark-details">
+              <div className="watermark-content">
+                <div className="detail-label">
+                  <FileText className="detail-icon" />
+                  <span>Extracted Content</span>
+                </div>
+                <div className="watermark-text">
+                  "{extractedContent}"
+                </div>
+              </div>
+              
+              {method && (
+                <div className="watermark-method">
+                  <div className="detail-label">
+                    <Info className="detail-icon" />
+                    <span>Detection Method</span>
+                  </div>
+                  <div className="method-badge">
+                    {method === 'stegano_lsb' ? 'Steganographic LSB' : 'Visible Text'}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="results-panel">
       <div className="results-header">
@@ -137,6 +210,8 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({ results, isAnalyzing
           </div>
         ) : (
           <div className="results-data">
+            {renderWatermarkSection()}
+            
             <div className="overall-result">
               {(() => {
                 const status = getOverallStatus();

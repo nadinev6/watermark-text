@@ -18,6 +18,54 @@ function App() {
   const [results, setResults] = React.useState<any>(null);
   const [history, setHistory] = React.useState<HistoryItem[]>([]);
   const [isAnalyzing, setIsAnalyzing] = React.useState(false);
+  const [watermarkInfo, setWatermarkInfo] = React.useState<{
+    hasWatermark: boolean;
+    extractedContent?: string;
+    confidence?: number;
+    method?: string;
+  }>({ hasWatermark: false });
+
+  // Auto-extract watermark when text changes
+  React.useEffect(() => {
+    const extractWatermark = async () => {
+      if (!text.trim()) {
+        setWatermarkInfo({ hasWatermark: false });
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/watermark/extract', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text: text,
+            methods: ['stegano_lsb', 'visible_text']
+          }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          setWatermarkInfo({
+            hasWatermark: result.watermark_found,
+            extractedContent: result.watermark_content,
+            confidence: result.confidence_score,
+            method: result.extraction_method
+          });
+        } else {
+          setWatermarkInfo({ hasWatermark: false });
+        }
+      } catch (error) {
+        console.error('Auto watermark extraction failed:', error);
+        setWatermarkInfo({ hasWatermark: false });
+      }
+    };
+
+    // Debounce the extraction to avoid too many API calls
+    const timeoutId = setTimeout(extractWatermark, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [text]);
 
   const handleAnalyze = async () => {
     if (!text.trim()) return;
@@ -64,9 +112,15 @@ function App() {
               placeholder="Paste or type your text here to analyze for AI watermarks..."
               onAnalyze={handleAnalyze}
               isAnalyzing={isAnalyzing}
+              watermarkInfo={watermarkInfo}
+              onWatermarkChange={setWatermarkInfo}
             />
           </div>
-          <ResultsPanel results={results} isAnalyzing={isAnalyzing} />
+          <ResultsPanel 
+            results={results} 
+            isAnalyzing={isAnalyzing} 
+            watermarkInfo={watermarkInfo}
+          />
         </div>
       </div>
     </div>

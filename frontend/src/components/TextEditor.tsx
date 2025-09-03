@@ -35,6 +35,18 @@ interface TextEditorProps {
   placeholder?: string;
   onAnalyze?: () => void;
   isAnalyzing?: boolean;
+  watermarkInfo?: {
+    hasWatermark: boolean;
+    extractedContent?: string;
+    confidence?: number;
+    method?: string;
+  };
+  onWatermarkChange?: (info: {
+    hasWatermark: boolean;
+    extractedContent?: string;
+    confidence?: number;
+    method?: string;
+  }) => void;
 }
 
 interface AnalysisSettings {
@@ -63,7 +75,9 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   onChange, 
   placeholder = "Start typing...",
   onAnalyze,
-  isAnalyzing = false
+  isAnalyzing = false,
+  watermarkInfo,
+  onWatermarkChange
 }) => {
   const editorRef = React.useRef<HTMLDivElement>(null);
   const [wordCount, setWordCount] = React.useState(0);
@@ -78,11 +92,6 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     preserveFormatting: true
   });
   const [isWatermarking, setIsWatermarking] = React.useState(false);
-  const [watermarkStatus, setWatermarkStatus] = React.useState<{
-    hasWatermark: boolean;
-    extractedContent?: string;
-    confidence?: number;
-  }>({ hasWatermark: false });
 
   // Sample watermarked texts for testing
   const sampleWatermarkedTexts = [
@@ -307,11 +316,13 @@ However, the transition to remote work has also presented challenges that requir
       if (response.ok) {
         const result = await response.json();
         onChange(result.watermarked_text);
-        setWatermarkStatus({
+        const newWatermarkInfo = {
           hasWatermark: true,
           extractedContent: watermarkSettings.content,
-          confidence: 1.0
-        });
+          confidence: 1.0,
+          method: watermarkSettings.method
+        };
+        onWatermarkChange?.(newWatermarkInfo);
         alert('Watermark embedded successfully!');
       } else {
         const error = await response.json();
@@ -856,7 +867,7 @@ For information about available plots or volunteer opportunities, visit springfi
         
         <div className="toolbar-right">
           <div className="word-count">
-            {watermarkStatus.hasWatermark && (
+            {watermarkInfo?.hasWatermark && (
               <span className="count-item" style={{ 
                 backgroundColor: '#4ecdc4', 
                 color: 'white',
