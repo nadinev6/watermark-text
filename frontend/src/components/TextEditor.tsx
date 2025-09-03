@@ -17,7 +17,11 @@ import {
   AlignJustify,
   List,
   ListOrdered,
-  FolderOpen
+  FolderOpen,
+  Shield,
+  ShieldCheck,
+  Download,
+  Upload
 } from 'lucide-react';
 import { ExpandableTabs } from './ExpandableTabs';
 import { DropdownMenu } from './DropdownMenu';
@@ -39,6 +43,13 @@ interface AnalysisSettings {
   showDetailedAnalysis: boolean;
 }
 
+interface WatermarkSettings {
+  method: 'stegano_lsb' | 'visible_text';
+  visibility: 'hidden' | 'visible';
+  content: string;
+  preserveFormatting: boolean;
+}
+
 interface FormattingState {
   bold: boolean;
   italic: boolean;
@@ -58,6 +69,20 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   const [wordCount, setWordCount] = React.useState(0);
   const [charCount, setCharCount] = React.useState(0);
   const [isInitialized, setIsInitialized] = React.useState(false);
+
+  // Watermarking state
+  const [watermarkSettings, setWatermarkSettings] = React.useState<WatermarkSettings>({
+    method: 'stegano_lsb',
+    visibility: 'hidden',
+    content: '',
+    preserveFormatting: true
+  });
+  const [isWatermarking, setIsWatermarking] = React.useState(false);
+  const [watermarkStatus, setWatermarkStatus] = React.useState<{
+    hasWatermark: boolean;
+    extractedContent?: string;
+    confidence?: number;
+  }>({ hasWatermark: false });
 
   // Sample watermarked texts for testing
   const sampleWatermarkedTexts = [
@@ -257,6 +282,133 @@ However, the transition to remote work has also presented challenges that requir
     }, 0);
   };
 
+  const embedWatermark = async () => {
+    if (!value.trim() || !watermarkSettings.content.trim()) {
+      alert('Please provide both text and watermark content');
+      return;
+    }
+
+    setIsWatermarking(true);
+    try {
+      const response = await fetch('/api/watermark/embed', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: editorRef.current?.textContent || value,
+          watermark_content: watermarkSettings.content,
+          method: watermarkSettings.method,
+          visibility: watermarkSettings.visibility,
+          preserve_formatting: watermarkSettings.preserveFormatting
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        onChange(result.watermarked_text);
+        setWatermarkStatus({
+          hasWatermark: true,
+          extractedContent: watermarkSettings.content,
+          confidence: 1.0
+        });
+        alert('Watermark embedded successfully!');
+      } else {
+        const error = await response.json();
+        alert(`Watermark embedding failed: ${error.detail?.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Watermark embedding error:', error);
+      alert('Failed to embed watermark. Please try again.');
+    } finally {
+      setIsWatermarking(false);
+      setActiveDropdown(null);
+    }
+  };
+
+  const extractWatermark = async () => {
+    if (!value.trim()) {
+      alert('Please provide text to extract watermark from');
+      return;
+    }
+
+    setIsWatermarking(true);
+    try {
+      const response = await fetch('/api/watermark/extract', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: editorRef.current?.textContent || value,
+          methods: ['stegano_lsb', 'visible_text']
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setWatermarkStatus({
+          hasWatermark: result.watermark_found,
+          extractedContent: result.watermark_content,
+          confidence: result.confidence_score
+        });
+        
+        if (result.watermark_found) {
+          alert(`Watermark found: "${result.watermark_content}"`);
+        } else {
+          alert('No watermark detected in this text');
+        }
+      } else {
+        const error = await response.json();
+        alert(`Watermark extraction failed: ${error.detail?.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Watermark extraction error:', error);
+      alert('Failed to extract watermark. Please try again.');
+    } finally {
+      setIsWatermarking(false);
+      setActiveDropdown(null);
+    }
+  };
+
+  const exportWatermarkedText = () => {
+    const textContent = editorRef.current?.textContent || value;
+    if (!textContent.trim()) {
+      alert('No text to export');
+      return;
+    }
+
+    const blob = new Blob([textContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `watermarked-document-${Date.now()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setActiveDropdown(null);
+  };
+
+  const importText = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.txt,.md';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const content = e.target?.result as string;
+          onChange(content);
+        };
+        reader.readAsText(file);
+      }
+    };
+    input.click();
+    setActiveDropdown(null);
+  };
+
   const handleTabClick = (tabName: string, tabIndex: number) => {
     console.log('Tab clicked:', tabName, tabIndex); // Debug log
     console.log('Current activeDropdown:', activeDropdown);
@@ -283,6 +435,10 @@ However, the transition to remote work has also presented challenges that requir
     { 
       title: "Layout", 
       icon: AlignLeft
+    },
+    { 
+      title: "Watermark", 
+      icon: Shield
     },
     { type: "separator" as const },
     { 
@@ -604,6 +760,57 @@ For information about available plots or volunteer opportunities, visit springfi
           }
         ];
       
+      case 'watermark':
+        return [
+          { 
+            label: 'Embed Watermark', 
+            icon: Shield, 
+            onClick: () => {
+              const content = prompt('Enter watermark content:', watermarkSettings.content || '© 2024 Your Name');
+              if (content !== null) {
+                setWatermarkSettings(prev => ({ ...prev, content }));
+                if (content.trim()) {
+                  embedWatermark();
+                }
+              }
+            },
+            disabled: isWatermarking || !value.trim()
+          },
+          { 
+            label: 'Extract Watermark', 
+            icon: ShieldCheck, 
+            onClick: extractWatermark,
+            disabled: isWatermarking || !value.trim()
+          },
+          { type: 'separator' as const },
+          { 
+            label: 'Stegano LSB', 
+            icon: Eye, 
+            onClick: () => setWatermarkSettings(prev => ({ ...prev, method: 'stegano_lsb' })),
+            type: 'toggle' as const,
+            checked: watermarkSettings.method === 'stegano_lsb'
+          },
+          { 
+            label: 'Visible Text', 
+            icon: EyeOff, 
+            onClick: () => setWatermarkSettings(prev => ({ ...prev, method: 'visible_text' })),
+            type: 'toggle' as const,
+            checked: watermarkSettings.method === 'visible_text'
+          },
+          { type: 'separator' as const },
+          { 
+            label: 'Export Text', 
+            icon: Download, 
+            onClick: exportWatermarkedText,
+            disabled: !value.trim()
+          },
+          { 
+            label: 'Import Text', 
+            icon: Upload, 
+            onClick: importText
+          }
+        ];
+
       default:
         return [];
     }
@@ -625,7 +832,7 @@ For information about available plots or volunteer opportunities, visit springfi
                   setSelectedTabIndex(null);
                 } else {
                   // Handle the tab selection based on index
-                  const tabNames = ['document', 'format', 'layout', null, 'actions']; // null for separator
+                  const tabNames = ['document', 'format', 'layout', 'watermark', null, 'actions']; // null for separator
                   const tabName = tabNames[index];
                   if (tabName) {
                     console.log('Opening dropdown for tab:', tabName);
@@ -649,6 +856,15 @@ For information about available plots or volunteer opportunities, visit springfi
         
         <div className="toolbar-right">
           <div className="word-count">
+            {watermarkStatus.hasWatermark && (
+              <span className="count-item" style={{ 
+                backgroundColor: '#4ecdc4', 
+                color: 'white',
+                fontWeight: '600'
+              }}>
+                🛡️ Watermarked
+              </span>
+            )}
             <span className="count-item">{wordCount} words</span>
             <span className="count-separator">•</span>
             <span className="count-item">{charCount} characters</span>
