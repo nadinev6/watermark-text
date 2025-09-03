@@ -48,6 +48,30 @@ Validate metadata/cover specs pre-export.
 Offer templates matching platform guidelines (e.g., KDP’s cover template).Practical Use Case:
 Self-publishers can watermark manuscripts with:
 
+How It Works Without Affecting Readability:
+
+Bit Manipulation:
+stegano modifies only the least significant bit (LSB) of each character's ASCII value. For example:
+Character 'A' (ASCII 65 → binary 01000001)
+After hiding one bit: becomes 01000000 (still decodes as 'A')
+
+Minimal Changes:
+The visual difference between original and watermarked text is undetectable to humans. F
+
+
+Original: "The quick brown fox jumps over the lazy dog."
+Watermarked: "The quick brown fox jumps over the lazy dog." 
+
+Robustness:
+The watermark survives:
+Copy-pasting
+Minor text edits (e.g., adding/removing spaces)
+Format conversions (TXT, RTF, etc.)
+Why It Doesn't Affect Readability:
+Character Integrity: Only 1 bit per character is altered, preserving the character's appearance.
+Human Perception: The brain doesn't register such minimal changes.
+Unicode Support: Works with UTF-8 encoded text (handles international characters).
+
 Copyright notices
 Author IDs
 Timestamps
