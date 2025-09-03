@@ -11,7 +11,9 @@ Amazon Kindle
 PDF
 Print-on-demand, some retailers
 - Fixed layout (300 DPI for print)<br>- Consistent margins/fonts<br>- Embedded fonts<br>- High-res cover (≥2000×3000 px)
+
 🎯 Critical Requirements for Self-Publishers
+
 Metadata:
 ISBN (optional but recommended)
 Author name, title, subtitle
@@ -26,6 +28,7 @@ Fonts: Use standard serif/sans-serif (e.g., Times New Roman, Arial)
 Margins: 0.5–1 inch (prevents cropping)
 Chapter Headings: Consistent hierarchy (H1/H2 tags in EPUB)
 Images: Optimized for screen (72–150 DPI)
+
 💧 Watermarking in E-Books
 Your watermarking feature integrates seamlessly with these formats:
 
@@ -34,11 +37,19 @@ PDF: Ideal for watermarks—embed them as backgrounds or overlays (your Stegano 
 Best Practice:
 Visible Watermarks: Add faint text/logos (e.g., "© [Author Name]").
 Invisible Watermarks: Use Stegano to embed metadata (e.g., author ID) without affecting readability.
-🚀 Workflow for Your Application
+
+🚀 Workflow
 User Creates Text → Adds watermark via your tool.
 Export Options:
 EPUB: For broad retailer compatibility.
 PDF: For print-on-demand or fixed-layout needs.
 Automate Compliance:
 Validate metadata/cover specs pre-export.
-Offer templates matching platform guidelines (e.g., KDP’s cover template).
+Offer templates matching platform guidelines (e.g., KDP’s cover template).Practical Use Case:
+Self-publishers can watermark manuscripts with:
+
+Copyright notices
+Author IDs
+Timestamps
+Unique identifiers
+The watermarked text looks identical to the original, but the hidden data proves ownership and authenticity.
