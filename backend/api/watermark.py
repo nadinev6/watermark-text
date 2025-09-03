@@ -5,17 +5,17 @@ This module provides FastAPI endpoints for watermark embedding, extraction,
 and validation operations using steganographic and visible watermarking methods.
 """
 
+
 import time
 import logging
 from typing import List, Optional, Any
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
 from fastapi.responses import JSONResponse
 
- 
 from models.schemas import (
     WatermarkEmbedRequest,
     WatermarkEmbedResponse,
-    WatermarkExtractRequest,
+    WatermarkExtractRequest, # Ensure this is imported
     WatermarkExtractResponse,
     WatermarkValidationRequest,
     WatermarkValidationResponse,
@@ -72,6 +72,85 @@ async def embed_watermark(
     Raises:
         HTTPException: If embedding fails or invalid parameters provided
     """
+    start_time = time.time()
+    
+    try:
+        # --- NEW ANTI-PLAGIARISM CHECK ---
+        # Create an extraction request for the current text
+        extract_request = WatermarkExtractRequest(
+            text=request.text,
+            methods=[WatermarkMethod.STEGANO_LSB, WatermarkMethod.VISIBLE_TEXT] # Check both methods
+        )
+        
+        # Attempt to extract any existing watermark
+        existing_watermark_result = await service.extract_watermark(extract_request)
+        
+        # If a watermark is found, prevent embedding and raise an error
+        if existing_watermark_result.watermark_found:
+            raise HTTPException(
+                status_code=409, # Conflict
+                detail={
+                    "error": "WATERMARK_OVERWRITE_DENIED",
+                    "message": f"Overwrite denied: Text already contains a watermark ('{existing_watermark_result.watermark_content}'). Embedding a new watermark would corrupt the existing one.",
+                    "recoverable": False
+                }
+            )
+        # --- END NEW ANTI-PLAGIARISM CHECK ---
+
+        logger.info(
+            f"Watermark embed request: method={request.method.value}, "
+            f"visibility={request.visibility.value}, text_length={len(request.text)}"
+        )
+        
+        # Perform watermark embedding
+        response = await service.embed_watermark(request)
+        
+        # Schedule background tasks for analytics (if needed)
+        background_tasks.add_task(
+            _log_watermark_operation,
+            "embed",
+            request.method.value,
+            len(request.text),
+            response.processing_time_ms
+        )
+        
+        logger.info(
+            f"Watermark embedded successfully: hash={response.watermark_hash[:16]}..., "
+            f"time={response.processing_time_ms}ms"
+        )
+        
+        return response
+        
+    except WatermarkingError as e:
+        logger.warning(f"Watermarking error: {e.message} (code: {e.error_code})")
+        
+        # Map watermarking errors to appropriate HTTP status codes
+        status_code = 400  # Default to bad request
+        if e.error_code in ["TEXT_TOO_SHORT", "TEXT_TOO_LONG", "EMPTY_WATERMARK", "WATERMARK_TOO_LONG"]:
+            status_code = 400  # Bad request
+        elif e.error_code in ["UNSUPPORTED_METHOD"]:
+            status_code = 422  # Unprocessable entity
+        elif e.error_code in ["STEGANO_EMBED_FAILED", "VISIBLE_EMBED_FAILED"]:
+            status_code = 500  # Internal server error
+        
+        raise HTTPException(
+            status_code=status_code,
+            detail={
+                "error": e.error_code,
+                "message": e.message,
+                "recoverable": e.recoverable
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Unexpected error during watermark embedding: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Watermark embedding failed due to internal error"
+        )
+
+# ... (rest of the file) ...
+
     try:
         logger.info(
             f"Watermark embed request: method={request.method.value}, "
