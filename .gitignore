@@ -1,0 +1,8 @@
+.env
+roadmap.md
+context.md
+/.kiro
+/start_backend_mock.bat
+/backend/models
+/backend/models_cache
+/frontend/node_modules

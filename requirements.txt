@@ -1,0 +1,35 @@
+# Core API framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# Machine Learning and NLP
+torch>=2.6.0
+transformers>=4.46.0
+tokenizers>=0.15.0
+
+# Data validation and serialization
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Database and storage
+sqlalchemy==2.0.23
+aiosqlite==0.19.0
+
+# HTTP client and utilities
+httpx==0.25.2
+python-multipart==0.0.6
+
+# Development and testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+
+# Logging and monitoring
+structlog==23.2.0
+
+# Environment and configuration
+python-dotenv==1.0.0
+
+# Optional: For enhanced model support
+accelerate==0.25.0
+safetensors==0.4.1

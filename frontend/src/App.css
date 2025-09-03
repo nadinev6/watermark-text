@@ -1,0 +1,55 @@
+.app {
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+  overflow: hidden;
+}
+
+.app-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 280px 1fr 400px;
+  gap: 0;
+  height: calc(100vh - 80px);
+}
+
+.editor-container {
+  position: relative;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    -10px 0 30px rgba(0, 0, 0, 0.1),
+    10px 0 30px rgba(0, 0, 0, 0.1);
+  overflow: visible;
+}
+
+@media (max-width: 1200px) {
+  .main-layout {
+    grid-template-columns: 240px 1fr 320px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+  }
+  
+  .editor-container {
+    border-left: none;
+    border-right: none;
+    box-shadow: 
+      0 -10px 30px rgba(0, 0, 0, 0.1),
+      0 10px 30px rgba(0, 0, 0, 0.1);
+  }
+}
