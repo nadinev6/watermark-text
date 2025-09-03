@@ -10,26 +10,6 @@ import logging
 from typing import List, Optional, Any
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
 from fastapi.responses import JSONResponse
-# api/detection.py
-from stegano import text as stegano_text
-from ..utils.config import get_config
-
-async def detect_with_watermark(text: str):
-    """Enhanced detection that checks for watermarks first"""
-    config = get_config()
-    
-    # First check for watermarks
-    try:
-        watermark = stegano_text.reveal(text)
-        if watermark:
-            return {
-                "has_watermark": True,
-                "watermark_content": watermark,
-                "detection_method": "stegano_extraction"
-            }
-    except:
-        pass  # Continue with regular detection if watermark fails
-
 from models.schemas import (
     DetectionRequest,
     DetectionResponse,

@@ -14,6 +14,7 @@ from utils.config import get_config
 from api.middleware import setup_middleware
 from api.detection import router as detection_router
 from api.test_data import router as test_data_router
+from api.watermark import router as watermark_router
 
 # main.py (update api_info endpoint)
 @app.get("/api/info")
@@ -66,6 +67,7 @@ setup_middleware(app)
 # Include API routers
 app.include_router(detection_router)
 app.include_router(test_data_router)
+app.include_router(watermark_router)
 
 
 @app.get("/")
@@ -85,6 +87,9 @@ async def root():
             "detection": "/api/detect",
             "batch_analysis": "/api/analyze-batch",
             "test_data_generation": "/api/generate-test-data",
+            "watermark_embed": "/api/watermark/embed",
+            "watermark_extract": "/api/watermark/extract",
+            "watermark_validate": "/api/watermark/validate",
             "history": "/api/history",
             "stats": "/api/stats",
             "health": "/health",
@@ -192,14 +197,46 @@ async def api_info():
                 "capabilities": ["statistical_analysis", "fallback_detection"]
             }
         ],
+        "supported_watermarking_methods": [
+            {
+                "name": "stegano_lsb",
+                "description": "Hidden watermark using least significant bit steganography",
+                "visibility": "completely_hidden",
+                "capabilities": ["text_embedding", "text_extraction", "integrity_validation"]
+            },
+            {
+                "name": "visible_text",
+                "description": "Visible watermark as text annotation",
+                "visibility": "configurable",
+                "capabilities": ["text_embedding", "text_extraction", "attribution"]
+            }
+        ],
         "endpoints": {
             "POST /api/detect": "Analyze single text for watermarks",
             "POST /api/analyze-batch": "Batch analysis of multiple texts",
             "POST /api/generate-test-data": "Generate test datasets",
+            "POST /api/watermark/embed": "Embed watermark into text",
+            "POST /api/watermark/extract": "Extract watermark from text",
+            "POST /api/watermark/validate": "Validate watermark integrity",
+            "GET /api/watermark/methods": "Get watermarking method information",
+            "GET /api/watermark/stats": "Get watermarking service statistics",
             "GET /api/history": "Retrieve analysis history",
             "GET /api/stats": "Get detection statistics",
             "GET /api/generation-stats": "Get test generation statistics",
             "GET /api/default-prompts": "Get default generation prompts"
+        },
+        "features": {
+            "watermarking": {
+                "methods": ["stegano_lsb", "visible_text"],
+                "visibility_options": ["hidden", "visible"],
+                "max_text_length": config.max_text_length if hasattr(config, 'max_text_length') else 50000,
+                "max_watermark_length": 500
+            },
+            "detection": {
+                "methods": ["synthid", "custom"],
+                "batch_processing": True,
+                "history_tracking": True
+            }
         },
         "rate_limits": {
             "requests_per_minute": config.api.rate_limit_requests_per_minute,
